@@ -16,7 +16,7 @@ class Block1(nn.Module):
         return out
 
 class Block2(nn.Module):
-    def __init__(self, inplanes=320, outplanes=320, kernel_size=3, stride=2):
+    def __init__(self, inplanes=20, outplanes=20, kernel_size=3, stride=2):
         super().__init__()
         self.bn = nn.BatchNorm1d(inplanes)
         self.relu = nn.ReLU(inplace=True)
@@ -35,17 +35,6 @@ class Block2(nn.Module):
 class Model(nn.Module):
     def __init__(self):
         super().__init__()
-        self.conv1 = nn.Conv2d(1, 16, kernel_size=[1, 2], stride=[1, 2])
-        self.conv2 = nn.Conv2d(16, 16, kernel_size=[1, 2], stride=[1, 1])
-
-        layers = [Block1(16, 16, [1,3], [0, 3//2]) for _ in range(3)]
-        self.layers1 = nn.Sequential(*layers)
-
-        layers = [Block1(16, 16, [1,5], [0, 5//2]) for _ in range(3)]
-        self.layers2 = nn.Sequential(*layers)
-
-        layers = [Block1(16, 16, [1,7], [0, 7//2]) for _ in range(3)]
-        self.layers3 = nn.Sequential(*layers)
 
         layers = [Block2(kernel_size=3) for _ in range(2)]
         self.layers11 = nn.Sequential(*layers)
@@ -56,40 +45,53 @@ class Model(nn.Module):
         layers = [Block2(kernel_size=7) for _ in range(2)]
         self.layers31 = nn.Sequential(*layers)
 
-        self.fc = nn.Linear(960, 2)
+        layers = [Block2(kernel_size=9) for _ in range(2)]
+        self.layers31 = nn.Sequential(*layers)
+
+        layers = [Block2(kernel_size=11) for _ in range(2)]
+        self.layers31 = nn.Sequential(*layers)
+
+        layers = [Block2(kernel_size=13) for _ in range(2)]
+        self.layers31 = nn.Sequential(*layers)
+
+
+        self.fc = nn.Linear(120, 2)
 
     def forward(self, x):
         """ x.shape: batch_size x 20 x 125 (500 x 250hz = 125)
         """
-        x = x.unsqueeze(1)
-        x = self.conv1(x)
-        x = self.conv2(x)
-
         batch = x.shape[0]
         length = x.shape[-1]
 
-        x1 = self.layers1(x).reshape(batch, -1, length)
-        x2 = self.layers2(x).reshape(batch, -1, length)
-        x3 = self.layers3(x).reshape(batch, -1, length)
 
-        x1 = self.layers11(x1)
-        x2 = self.layers21(x2)
-        x3 = self.layers31(x3)
+        x1 = self.layers11(x)
+        x2 = self.layers21(x)
+        x3 = self.layers31(x)
+        x4 = self.layers31(x)
+        x5 = self.layers31(x)
+        x6 = self.layers31(x)
+
+        #print(f"x1.shape:{x1.shape}")
+        #print(f"x2.shape:{x2.shape}")
+        #print(f"x3.shape:{x3.shape}")
+        #print(f"x4.shape:{x3.shape}")
 
         x1 = x1.mean(-1)
         x2 = x2.mean(-1)
         x3 = x3.mean(-1)
-        #print(f"x1.shape:{x1.shape}")
-        #print(f"x2.shape:{x2.shape}")
-        #print(f"x3.shape:{x3.shape}")
+        x4 = x4.mean(-1)
+        x5 = x5.mean(-1)
+        x6 = x6.mean(-1)
 
-        x = torch.cat([x1,x2,x3], dim=-1)
+
+        x = torch.cat([x1,x2,x3, x4, x5, x6], dim=-1)
+        #print(f"x.shape:{x.shape}")
         x = self.fc(x)
         return x
 
 if __name__ == "__main__":
     model = Model()
-    x = torch.rand(1, 20, 125)
+    x = torch.rand(1, 20, 100)
     x = model(x)
     print(f"x.shape: {x.shape}")
     print(x)
